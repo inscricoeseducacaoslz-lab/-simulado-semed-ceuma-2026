@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Seletiva 2026</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f4f6f9;
+  color:#1f2937;
+}
+
+header{
+  background:#063b72;
+  color:#fff;
+  text-align:center;
+  padding:22px 12px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+
+header h1{
+  margin:0 0 12px;
+  font-size:29px;
+}
+
+.tempo-box{
+  background:#fff;
+  color:#b00020;
+  display:inline-block;
+  padding:10px 18px;
+  border-radius:8px;
+  font-size:21px;
+  font-weight:bold;
+}
+
+.aviso{
+  max-width:850px;
+  margin:13px auto 0;
+  padding:11px 14px;
+  background:#fff3cd;
+  color:#664d03;
+  border-radius:7px;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.container{
+  max-width:900px;
+  margin:22px auto;
+  padding:0 12px 60px;
+}
+
+.card{
+  background:#fff;
+  border-radius:10px;
+  padding:18px;
+  margin-bottom:16px;
+  box-shadow:0 1px 6px rgba(0,0,0,.12);
+}
+
+.card h3{
+  margin-top:0;
+}
+
+input[type="text"],
+input[type="email"]{
+  width:100%;
+  padding:12px;
+  border:1px solid #bbb;
+  border-radius:6px;
+  margin:6px 0 14px;
+  font-size:16px;
+}
+
+.area{
+  background:#dfe9f5;
+  border-left:5px solid #063b72;
+  padding:11px 14px;
+  margin:28px 0 14px;
+  font-weight:bold;
+}
+
+.questao{
+  background:#fff;
+  padding:18px;
+  margin-bottom:14px;
+  border-radius:9px;
+  box-shadow:0 1px 5px rgba(0,0,0,.1);
+}
+
+.questao p{
+  font-weight:bold;
+  line-height:1.45;
+}
+
+.opcao{
+  display:block;
+  padding:7px 2px;
+  line-height:1.4;
+}
+
+.opcao input{
+  margin-right:7px;
+}
+
+.finalizar{
+  text-align:center;
+  margin:30px 0;
+}
+
+button{
+  background:#087443;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:15px 28px;
+  font-size:18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:disabled{
+  opacity:.55;
+}
+
+#status{
+  text-align:center;
+  margin-top:15px;
+  font-weight:bold;
+}
+
+#telaFinal{
+  display:none;
+  max-width:680px;
+  margin:80px auto;
+  padding:35px 20px;
+  background:#fff;
+  text-align:center;
+  border-radius:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,.15);
+}
+
+#telaFinal h1{
+  color:#087443;
+}
+
+.progresso{
+  text-align:center;
+  font-size:14px;
+  margin-top:9px;
+}
+
+@media(max-width:600px){
+  header h1{
+    font-size:24px;
+  }
+
+  .tempo-box{
+    font-size:19px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>SELETIVA 2026</h1>
+
+  <div class="tempo-box">
+    Tempo restante:
+    <span id="cronometro">03:00:00</span>
+  </div>
+
+  <div class="aviso">
+    Atenção: durante todo o período da prova, o participante estará sendo monitorado.
+  </div>
+
+  <div class="progresso" id="progresso">
+    0 de 60 questões respondidas
+  </div>
+</header>
+
+<main id="prova" class="container">
+
+  <div class="card">
+    <h3>Identificação do participante</h3>
+
+    <label>Nome completo</label>
+    <input type="text" id="nome" autocomplete="name">
+
+    <label>E-mail</label>
+    <input type="email" id="email" autocomplete="email">
+
+    <p>
+      A prova contém 60 questões e possui duração máxima de 3 horas.
+    </p>
+
+    <p>
+      Pontuação: cada resposta correta vale +1 ponto; cada resposta incorreta
+      vale −1 ponto; questão não respondida vale 0.
+    </p>
+  </div>
+
+  <div id="listaQuestoes"></div>
+
+  <div class="finalizar">
+    <button id="botaoFinalizar" onclick="finalizarProva(false)">
+      Finalizar prova
+    </button>
+
+    <div id="status"></div>
+  </div>
+
+</main>
+
+<section id="telaFinal">
+  <h1>Respostas enviadas com sucesso.</h1>
+
+  <p>
+    Aguarde novas informações que serão encaminhadas para o seu e-mail.
+  </p>
+
+  <p>
+    <strong>CEUMA e SEMED agradecem a sua participação.</strong>
+  </p>
+</section>
+
+<script>
+
+/* =====================================================
+   CONFIGURAÇÕES
+===================================================== */
+
+const EMAIL_DESTINO = "inscricoes.educacao.slz@gmail.com";
+
+/*
+  NOTA MÍNIMA INTERNA.
+  Neste exemplo está em 30 pontos líquidos.
+  O participante NÃO verá essa informação.
+*/
+const NOTA_MINIMA = 30;
+
+/* =====================================================
+   QUESTÕES
+===================================================== */
+
+const questoes = [
+
+/* ================= PORTUGUÊS ================= */
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"A coerência textual está relacionada principalmente:",
+a:[
+"À quantidade de palavras utilizadas.",
+"À relação lógica entre as ideias apresentadas.",
+"Ao uso obrigatório de linguagem formal.",
+"À presença de palavras difíceis."
+],
+c:1
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Assinale a alternativa corretamente pontuada:",
+a:[
+"Os candidatos, chegaram cedo.",
+"Os candidatos chegaram, cedo.",
+"Os candidatos chegaram cedo.",
+"Os, candidatos chegaram cedo."
+],
+c:2
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Na frase 'Os estudantes realizaram a atividade', a palavra 'estudantes' é:",
+a:[
+"Verbo.",
+"Substantivo.",
+"Advérbio.",
+"Preposição."
+],
+c:1
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"A principal finalidade de um texto informativo é:",
+a:[
+"Transmitir informações.",
+"Produzir rimas.",
+"Expressar apenas sentimentos.",
+"Dar ordens obrigatoriamente."
+],
+c:0
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"A palavra 'rapidamente' é classificada como:",
+a:[
+"Advérbio.",
+"Substantivo.",
+"Artigo.",
+"Pronome."
+],
+c:0
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Assinale a palavra escrita corretamente:",
+a:[
+"Excessão.",
+"Exceção.",
+"Exessão.",
+"Excesssão."
+],
+c:1
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Em 'O candidato estudou porque teria prova', a palavra 'porque' introduz ideia de:",
+a:[
+"Causa.",
+"Oposição.",
+"Conclusão.",
+"Comparação."
+],
+c:0
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Um texto apresenta coesão quando:",
+a:[
+"Suas partes estão linguisticamente conectadas.",
+"Possui obrigatoriamente dez parágrafos.",
+"Não utiliza pronomes.",
+"Todas as frases possuem o mesmo tamanho."
+],
+c:0
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Em 'A escola recebeu novos computadores', o sujeito é:",
+a:[
+"Novos computadores.",
+"Computadores.",
+"A escola.",
+"Recebeu."
+],
+c:2
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Qual frase é mais adequada a uma comunicação profissional?",
+a:[
+"Manda o documento aí.",
+"Favor encaminhar o documento até o final do expediente.",
+"Tô esperando esse papel.",
+"Vê isso pra mim logo."
+],
+c:1
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Interpretar adequadamente um texto exige:",
+a:[
+"Considerar informações explícitas e implícitas.",
+"Ler somente o título.",
+"Ignorar o contexto.",
+"Observar apenas o último parágrafo."
+],
+c:0
+},
+
+{
+area:"LÍNGUA PORTUGUESA",
+q:"Em 'Os servidores organizaram os documentos', o verbo é:",
+a:[
+"Servidores.",
+"Organizaram.",
+"Documentos.",
+"Os."
+],
+c:1
+},
+
+/* ================= INFORMÁTICA ================= */
+
+{
+area:"INFORMÁTICA",
+q:"No Microsoft Word, o atalho Ctrl+C é utilizado para:",
+a:[
+"Colar.",
+"Copiar.",
+"Recortar.",
+"Salvar."
+],
+c:1
+},
+
+{
+area:"INFORMÁTICA",
+q:"No Microsoft Excel, uma fórmula normalmente começa pelo símbolo:",
+a:[
+"#",
+"@",
+"=",
+"%"
+],
+c:2
+},
+
+{
+area:"INFORMÁTICA",
+q:"Um arquivo com extensão .xlsx está normalmente associado ao:",
+a:[
+"Microsoft Excel.",
+"Microsoft Word.",
+"PowerPoint.",
+"Bloco de Notas."
+],
+c:0
+},
+
+{
+area:"INFORMÁTICA",
+q:"Phishing é:",
+a:[
+"Uma ferramenta de edição de texto.",
+"Uma tentativa fraudulenta de obter dados pessoais.",
+"Um antivírus.",
+"Um recurso de impressão."
+],
+c:1
+},
+
+{
+area:"INFORMÁTICA",
+q:"Qual senha tende a ser mais segura?",
+a:[
+"123456.",
+"senha123.",
+"joao2026.",
+"Uma combinação longa de letras, números e símbolos."
+],
+c:3
+},
+
+{
+area:"INFORMÁTICA",
+q:"No e-mail, o campo CCO permite:",
+a:[
+"Enviar cópia oculta para destinatários.",
+"Excluir anexos.",
+"Cancelar o envio automaticamente.",
+"Alterar a senha do remetente."
+],
+c:0
+},
+
+{
+area:"INFORMÁTICA",
+q:"A organização de arquivos em pastas serve principalmente para:",
+a:[
+"Facilitar a localização e o gerenciamento dos documentos.",
+"Apagar arquivos antigos automaticamente.",
+"Impedir qualquer alteração.",
+"Desligar o computador."
+],
+c:0
+},
+
+{
+area:"INFORMÁTICA",
+q:"Backup significa:",
+a:[
+"Formatação do computador.",
+"Cópia de segurança dos dados.",
+"Exclusão definitiva dos arquivos.",
+"Atualização de teclado."
+],
+c:1
+},
+
+{
+area:"INFORMÁTICA",
+q:"No Excel, a fórmula =SOMA(A1:A5) realiza:",
+a:[
+"A soma dos valores de A1 até A5.",
+"A exclusão dessas células.",
+"A contagem de letras.",
+"A classificação alfabética."
+],
+c:0
+},
+
+{
+area:"INFORMÁTICA",
+q:"Uma prática recomendada de segurança digital é:",
+a:[
+"Compartilhar senhas.",
+"Manter sistemas e aplicativos atualizados.",
+"Clicar em todos os links recebidos.",
+"Usar uma única senha para todos os serviços."
+],
+c:1
+},
+
+{
+area:"INFORMÁTICA",
+q:"Um arquivo PDF é bastante utilizado porque:",
+a:[
+"Preserva a apresentação do documento em diferentes dispositivos.",
+"Serve exclusivamente para planilhas.",
+"Substitui o sistema operacional.",
+"É sempre editável."
+],
+c:0
+},
+
+{
+area:"INFORMÁTICA",
+q:"A opção 'Salvar como' permite:",
+a:[
+"Salvar outra cópia com nome ou local diferente.",
+"Excluir o documento.",
+"Desligar o computador.",
+"Enviar automaticamente por e-mail."
+],
+c:0
+},
+
+/* ================= RACIOCÍNIO LÓGICO ================= */
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Um produto de R$ 200 recebeu desconto de 10%. O novo valor é:",
+a:[
+"R$ 180.",
+"R$ 190.",
+"R$ 170.",
+"R$ 160."
+],
+c:0
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Quatro funcionários dividiram igualmente 80 documentos. Cada funcionário recebeu:",
+a:[
+"10.",
+"15.",
+"20.",
+"25."
+],
+c:2
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Complete a sequência: 2, 4, 8, 16, ___",
+a:[
+"18.",
+"24.",
+"30.",
+"32."
+],
+c:3
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Se 3 cadernos custam R$ 24, cinco cadernos, pelo mesmo preço unitário, custam:",
+a:[
+"R$ 32.",
+"R$ 40.",
+"R$ 45.",
+"R$ 48."
+],
+c:1
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"25% de 400 corresponde a:",
+a:[
+"50.",
+"75.",
+"100.",
+"125."
+],
+c:2
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Todos os professores da escola são servidores. Ana é professora da escola. Logo:",
+a:[
+"Ana é servidora.",
+"Ana não é servidora.",
+"Nenhum professor é servidor.",
+"Não é possível concluir."
+],
+c:0
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"A média aritmética de 6, 8 e 10 é:",
+a:[
+"7.",
+"8.",
+"9.",
+"10."
+],
+c:1
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Uma turma possui 30 alunos. Se 20% faltaram, quantos alunos faltaram?",
+a:[
+"4.",
+"5.",
+"6.",
+"8."
+],
+c:2
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Um servidor recebe R$ 2.000 e obtém aumento de 5%. O novo valor será:",
+a:[
+"R$ 2.050.",
+"R$ 2.100.",
+"R$ 2.150.",
+"R$ 2.200."
+],
+c:1
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"A sequência 5, 10, 15, 20, 25 apresenta como próximo termo:",
+a:[
+"27.",
+"28.",
+"30.",
+"35."
+],
+c:2
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Se 6 caixas possuem 12 livros cada, o total de livros é:",
+a:[
+"60.",
+"66.",
+"72.",
+"78."
+],
+c:2
+},
+
+{
+area:"RACIOCÍNIO LÓGICO E MATEMÁTICO",
+q:"Uma reunião começou às 13h30 e terminou às 16h. Sua duração foi de:",
+a:[
+"2 horas.",
+"2 horas e 30 minutos.",
+"3 horas.",
+"3 horas e 30 minutos."
+],
+c:1
+},
+
+/* ================= ADMINISTRAÇÃO ================= */
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"No atendimento ao público, uma conduta adequada é:",
+a:[
+"Tratar usuários com respeito, clareza e cordialidade.",
+"Priorizar conhecidos.",
+"Evitar prestar informações.",
+"Responder de maneira agressiva."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"A gestão de documentos envolve:",
+a:[
+"Organização, classificação, armazenamento e recuperação de informações.",
+"Apenas impressão de documentos.",
+"Somente descarte.",
+"Somente envio por e-mail."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"A comunicação oficial deve priorizar:",
+a:[
+"Clareza e objetividade.",
+"Gírias.",
+"Excesso de informalidade.",
+"Ambiguidade."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"A ética no serviço envolve:",
+a:[
+"Respeito, responsabilidade e imparcialidade.",
+"Favorecimento pessoal.",
+"Divulgação indevida de dados.",
+"Tratamento desigual sem justificativa."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"Organizar o trabalho significa:",
+a:[
+"Planejar tarefas, recursos e responsabilidades.",
+"Executar atividades sem planejamento.",
+"Evitar definir prioridades.",
+"Eliminar registros."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"Nas relações interpessoais, a escuta ativa significa:",
+a:[
+"Ouvir com atenção e buscar compreender o interlocutor.",
+"Interromper constantemente.",
+"Ignorar opiniões diferentes.",
+"Evitar qualquer diálogo."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"Um bom atendimento deve:",
+a:[
+"Buscar compreender e orientar adequadamente a demanda apresentada.",
+"Ser diferente conforme preferência pessoal.",
+"Evitar registrar solicitações.",
+"Dispensar cordialidade."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"O arquivamento adequado contribui para:",
+a:[
+"Localização eficiente das informações.",
+"Perda de documentos.",
+"Duplicação obrigatória.",
+"Eliminação de registros importantes."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"No ambiente de trabalho, cooperação significa:",
+a:[
+"Atuar conjuntamente para atingir objetivos comuns.",
+"Evitar dividir informações necessárias.",
+"Transferir todas as responsabilidades.",
+"Competir em todas as situações."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"A definição prévia de objetivos faz parte principalmente da função administrativa de:",
+a:[
+"Planejamento.",
+"Improvisação.",
+"Arquivamento.",
+"Fiscalização externa."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"Quando um servidor recebe informação sigilosa relacionada ao trabalho, deve:",
+a:[
+"Preservar o sigilo conforme as regras aplicáveis.",
+"Publicá-la em redes sociais.",
+"Compartilhá-la com qualquer pessoa.",
+"Divulgá-la fora do ambiente profissional."
+],
+c:0
+},
+
+{
+area:"NOÇÕES DE ADMINISTRAÇÃO",
+q:"Uma equipe eficiente tende a apresentar:",
+a:[
+"Comunicação, cooperação e definição de responsabilidades.",
+"Ausência de objetivos.",
+"Conflitos permanentes.",
+"Falta de organização."
+],
+c:0
+},
+
+/* ================= EDUCAÇÃO ================= */
+
+{
+area:"EDUCAÇÃO",
+q:"A Lei nº 9.394/1996 é conhecida como:",
+a:[
+"Lei de Diretrizes e Bases da Educação Nacional.",
+"Estatuto da Cidade.",
+"Código Civil.",
+"Lei de Responsabilidade Fiscal."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A BNCC estabelece:",
+a:[
+"Aprendizagens essenciais a serem desenvolvidas pelos estudantes.",
+"Somente regras financeiras para escolas.",
+"Um calendário único para todas as escolas.",
+"A obrigatoriedade de um único livro didático."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A gestão democrática da escola pressupõe:",
+a:[
+"Participação da comunidade escolar nos processos de decisão.",
+"Concentração absoluta das decisões em uma única pessoa.",
+"Ausência de diálogo.",
+"Proibição da participação das famílias."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A inclusão escolar busca:",
+a:[
+"Garantir acesso, participação e aprendizagem aos estudantes.",
+"Separar estudantes obrigatoriamente.",
+"Reduzir oportunidades educacionais.",
+"Impedir adaptações pedagógicas."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"O planejamento educacional tem como uma de suas funções:",
+a:[
+"Organizar objetivos, estratégias e formas de acompanhamento.",
+"Eliminar a necessidade de avaliação.",
+"Impedir ajustes durante o processo.",
+"Substituir completamente o professor."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A avaliação da aprendizagem deve servir também para:",
+a:[
+"Identificar avanços e dificuldades e orientar intervenções pedagógicas.",
+"Somente punir erros.",
+"Classificar sem analisar o processo.",
+"Eliminar o planejamento."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"O currículo escolar compreende:",
+a:[
+"Conhecimentos, experiências e práticas educativas organizadas pela escola.",
+"Apenas o calendário de férias.",
+"Somente as notas dos alunos.",
+"Apenas regras disciplinares."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A educação infantil constitui:",
+a:[
+"A primeira etapa da educação básica.",
+"A última etapa da educação básica.",
+"Modalidade exclusiva do ensino superior.",
+"Curso profissionalizante."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"O ensino fundamental integra:",
+a:[
+"A educação básica.",
+"Somente o ensino superior.",
+"A pós-graduação.",
+"A educação exclusivamente profissional."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"Entre os direitos dos estudantes está:",
+a:[
+"Ter acesso a condições adequadas de aprendizagem e respeito.",
+"Ser discriminado por suas características.",
+"Ser impedido de participar das atividades sem motivo.",
+"Não receber orientação pedagógica."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"A relação escola-família-comunidade é importante porque:",
+a:[
+"Favorece diálogo, acompanhamento e participação no processo educativo.",
+"Elimina a responsabilidade da escola.",
+"Impede a participação dos responsáveis.",
+"Substitui completamente o trabalho pedagógico."
+],
+c:0
+},
+
+{
+area:"EDUCAÇÃO",
+q:"As políticas públicas de educação têm como finalidade geral:",
+a:[
+"Orientar ações do poder público para assegurar o direito à educação.",
+"Atender exclusivamente instituições privadas.",
+"Eliminar o planejamento educacional.",
+"Restringir obrigatoriamente o acesso à escola."
+],
+c:0
+}
+
+];
+
+/* =====================================================
+   MONTAGEM DA PROVA
+===================================================== */
+
+const lista = document.getElementById("listaQuestoes");
+
+let ultimaArea = "";
+
+questoes.forEach((item, indice) => {
+
+  if(item.area !== ultimaArea){
+    const area = document.createElement("div");
+    area.className = "area";
+    area.innerText = item.area;
+    lista.appendChild(area);
+    ultimaArea = item.area;
+  }
+
+  const div = document.createElement("div");
+  div.className = "questao";
+
+  let alternativas = "";
+
+  item.a.forEach((texto, letra) => {
+    alternativas += `
+      <label class="opcao">
+        <input
+          type="radio"
+          name="q${indice}"
+          value="${letra}"
+          onchange="atualizarProgresso()"
+        >
+        ${String.fromCharCode(65 + letra)}) ${texto}
+      </label>
+    `;
+  });
+
+  div.innerHTML = `
+    <p>${indice + 1}. ${item.q}</p>
+    ${alternativas}
+  `;
+
+  lista.appendChild(div);
+});
+
+/* =====================================================
+   CRONÔMETRO - 3 HORAS
+===================================================== */
+
+let segundosRestantes = 3 * 60 * 60;
+
+const timer = setInterval(() => {
+
+  segundosRestantes--;
+
+  if(segundosRestantes < 0){
+    segundosRestantes = 0;
+  }
+
+  const horas = Math.floor(segundosRestantes / 3600);
+  const minutos = Math.floor((segundosRestantes % 3600) / 60);
+  const segundos = segundosRestantes % 60;
+
+  document.getElementById("cronometro").innerText =
+    String(horas).padStart(2,"0") + ":" +
+    String(minutos).padStart(2,"0") + ":" +
+    String(segundos).padStart(2,"0");
+
+  if(segundosRestantes <= 0){
+    clearInterval(timer);
+    finalizarProva(true);
+  }
+
+},1000);
+
+/* =====================================================
+   ACOMPANHAMENTO BÁSICO DA SESSÃO
+===================================================== */
+
+let trocasDeAba = 0;
+let saidasDaJanela = 0;
+let tentativasCopiar = 0;
+let tentativasColar = 0;
+
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden){
+    trocasDeAba++;
+  }
+});
+
+window.addEventListener("blur", () => {
+  saidasDaJanela++;
+});
+
+document.addEventListener("copy", () => {
+  tentativasCopiar++;
+});
+
+document.addEventListener("paste", () => {
+  tentativasColar++;
+});
+
+/* =====================================================
+   PROGRESSO
+===================================================== */
+
+function atualizarProgresso(){
+
+  let respondidas = 0;
+
+  questoes.forEach((q,indice) => {
+    if(document.querySelector(`input[name="q${indice}"]:checked`)){
+      respondidas++;
+    }
+  });
+
+  document.getElementById("progresso").innerText =
+    `${respondidas} de 60 questões respondidas`;
+}
+
+/* =====================================================
+   FINALIZAÇÃO
+===================================================== */
+
+let provaFinalizada = false;
+
+async function finalizarProva(automatico){
+
+  if(provaFinalizada){
+    return;
+  }
+
+  const nome = document.getElementById("nome").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if(!nome || !email){
+
+    if(automatico){
+      document.getElementById("status").innerText =
+        "Preencha nome e e-mail para concluir o envio.";
+      return;
+    }
+
+    alert("Preencha seu nome completo e e-mail antes de finalizar.");
+    window.scrollTo({top:0,behavior:"smooth"});
+    return;
+  }
+
+  if(!automatico){
+
+    const confirmar = confirm(
+      "Deseja realmente finalizar a prova? Após o envio, não será possível alterar as respostas."
+    );
+
+    if(!confirmar){
+      return;
+    }
+  }
+
+  const botao = document.getElementById("botaoFinalizar");
+
+  botao.disabled = true;
+
+  document.getElementById("status").innerText =
+    "Enviando respostas...";
+
+  let acertos = 0;
+  let erros = 0;
+  let brancos = 0;
+
+  let respostasTexto = "";
+
+  questoes.forEach((item,indice) => {
+
+    const marcada =
+      document.querySelector(`input[name="q${indice}"]:checked`);
+
+    if(!marcada){
+
+      brancos++;
+
+      respostasTexto +=
+        `Questão ${indice + 1}: EM BRANCO\n`;
+
+      return;
+    }
+
+    const resposta = Number(marcada.value);
+
+    if(resposta === item.c){
+      acertos++;
+    }else{
+      erros++;
+    }
+
+    respostasTexto +=
+      `Questão ${indice + 1}: ${String.fromCharCode(65 + resposta)}\n`;
+  });
+
+  const pontuacao = acertos - erros;
+
+  const resultado =
+    pontuacao >= NOTA_MINIMA ? "APROVADO" : "NÃO APROVADO";
+
+  const agora = new Date();
+
+  const tempoUtilizado =
+    (3 * 60 * 60) - segundosRestantes;
+
+  const horasUsadas =
+    Math.floor(tempoUtilizado / 3600);
+
+  const minutosUsados =
+    Math.floor((tempoUtilizado % 3600) / 60);
+
+  const segundosUsados =
+    tempoUtilizado % 60;
+
+  const tempoFormatado =
+    String(horasUsadas).padStart(2,"0") + ":" +
+    String(minutosUsados).padStart(2,"0") + ":" +
+    String(segundosUsados).padStart(2,"0");
+
+  const dados = {
+
+    _subject:
+      `Resultado - Seletiva 2026 - ${nome}`,
+
+    nome_participante:
+      nome,
+
+    email_participante:
+      email,
+
+    data_hora:
+      agora.toLocaleString("pt-BR"),
+
+    total_questoes:
+      60,
+
+    acertos:
+      acertos,
+
+    erros:
+      erros,
+
+    em_branco:
+      brancos,
+
+    pontuacao_liquida:
+      pontuacao,
+
+    resultado_interno:
+      resultado,
+
+    tempo_utilizado:
+      tempoFormatado,
+
+    trocas_de_aba:
+      trocasDeAba,
+
+    saidas_da_janela:
+      saidasDaJanela,
+
+    tentativas_de_copia:
+      tentativasCopiar,
+
+    tentativas_de_colagem:
+      tentativasColar,
+
+    respostas:
+      respostasTexto
+
+  };
+
+  try{
+
+    const resposta = await fetch(
+      "https://formsubmit.co/ajax/" + EMAIL_DESTINO,
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Accept":"application/json"
+        },
+        body:JSON.stringify(dados)
+      }
+    );
+
+    if(!resposta.ok){
+      throw new Error("Falha no envio");
+    }
+
+    provaFinalizada = true;
+
+    clearInterval(timer);
+
+    document.getElementById("prova").style.display = "none";
+    document.querySelector("header").style.display = "none";
+
+    document.getElementById("telaFinal").style.display = "block";
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+
+  }catch(erro){
+
+    console.error(erro);
+
+    botao.disabled = false;
+
+    document.getElementById("status").innerText =
+      "Não foi possível enviar neste momento. Verifique sua conexão e tente novamente.";
+  }
+}
+
+/* Evita fechamento acidental durante a prova */
+
+window.addEventListener("beforeunload", function(event){
+
+  if(!provaFinalizada){
+
+    event.preventDefault();
+    event.returnValue = "";
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
